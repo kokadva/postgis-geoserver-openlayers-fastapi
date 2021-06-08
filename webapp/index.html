@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <title>Demo</title>
+
+    <script src="https://openlayers.org/en/v4.6.5/build/ol.js"></script>
+    <link rel="stylesheet" href="https://openlayers.org/en/v4.6.5/css/ol.css" type="text/css">
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.5.0/css/ol.css"
+          type="text/css">
+    <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.5.0/build/ol.js"></script>
+    <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=requestAnimationFrame,Element.prototype.classList,URL,fetch"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <!---->
+    <!--    <link href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css" rel="stylesheet">-->
+    <!--    <script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>-->
+    <!--    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">-->
+    <!---->
+    <link rel="stylesheet" href="css/skeleton.css" type="text/css">
+    <link rel="stylesheet" href="css/modal.css" type="text/css">
+    <!--    <link rel="stylesheet" href="css/normalize.css" type="text/css">-->
+    <link rel="stylesheet" href="css/popupStyle.css" type="text/css">
+    <link rel="stylesheet" href="css/indexPageStyle.css" type="text/css">
+    <link rel="stylesheet" href="css/search.css" type="text/css">
+    <link rel="stylesheet" href="css/btn.css" type="text/css">
+    <script src="https://code.jquery.com/jquery-3.6.0.slim.min.js"
+            integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI=" crossorigin="anonymous"></script>
+
+</head>
+<body>
+<main>
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h3>Map Tools</h3>
+        </div>
+        <div class="divider"></div>
+        <div class="sidebar-component">
+            <label>Drawing</label>
+            <div class="component-content">
+                <button type="button" class="sidebar-btn btn btn-primary ripple-effect"
+                        onclick="mapController.drawController.draw('Polygon')">Polygon
+                </button>
+                <button type="button" class="sidebar-btn btn btn-primary ripple-effect"
+                        onclick="mapController.drawController.draw('Point')">Point
+                </button>
+                <button type="button" class="sidebar-btn btn btn-primary ripple-effect"
+                        onclick="mapController.drawController.stop()">Reset
+                </button>
+            </div>
+        </div>
+
+        <div class="sidebar-component">
+            <label>Layers</label>
+            <div class="component-content checkboxes">
+                <div class="checkbox">
+                    <input type="checkbox" id="base_layer" name="scales"
+                           disabled
+                           checked>
+                    <label for="base_layer">Base Layer</label>
+                </div>
+                <div class="checkbox">
+                    <input type="checkbox" id="polygon_layer" name="scales"
+                           onchange="mapController.polygonLayer.setVisible(this.checked)"
+                           checked>
+                    <label for="polygon_layer">Polygon Layer</label>
+                </div>
+                <div class="checkbox">
+                    <input type="checkbox" id="objects_layer" name="scales"
+                           onchange="mapController.pointLayer.setVisible(this.checked)"
+                           checked>
+                    <label for="objects_layer">Objects Layer</label>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="sidebar-component">
+            <label>Filters</label>
+            <div class="component-content checkboxes">
+                <div class="checkbox">
+                    <input type="checkbox" id="a_filter" name="scales"
+                           onchange="mapController.filter_features('A', this.checked)"
+                           checked>
+                    <label for="a_filter">A Objects</label>
+                </div>
+                <div class="checkbox">
+                    <input type="checkbox" id="b_filter" name="scales"
+                           onchange="mapController.filter_features('B', this.checked)"
+                           checked>
+                    <label for="b_filter">B Objects</label>
+                </div>
+                <div>
+                    <button onclick="clearFilters();">Clear Filteres</button>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <div id="map" class="map">
+    </div>
+
+
+    <div id="myModal" class="modal">
+
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="actual-content">
+                <label for="category">Choose a category:</label>
+                <select id="category">
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                </select>
+                <button onclick="uploadPoint()">Upload</button>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<!---->
+<script>
+    function clearFilters() {
+        document.getElementById('a_filter').checked = true;
+        document.getElementById('b_filter').checked = true;
+        mapController.filter_features();
+    }
+
+</script>
+<script>
+    // Get the modal
+    var modal = document.getElementById("myModal");
+
+    // Get the <span> element that closes the modal
+    var span = document.getElementsByClassName("close")[0];
+
+    // When the user clicks the button, open the modal
+
+    span.onclick = function () {
+        modal.style.display = "none";
+    };
+
+    // When the user clicks anywhere outside of the modal, close it
+    window.onclick = function (event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+
+    let coordinates = [];
+
+    function openModal(_coordinates) {
+        coordinates = _coordinates;
+        modal.style.display = "block";
+
+    }
+
+    function uploadPoint() {
+        let xhr = new XMLHttpRequest();
+        xhr.open("POST", SERVER_URL, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.send(JSON.stringify({
+            coordinates: coordinates,
+            type: 'Point',
+            category: document.getElementById('category').value
+        }));
+        modal.style.display = "none";
+    }
+</script>
+<script src="js/btn.js"></script>
+<script src="js/Constants.js"></script>
+<script src="js/Styling.js"></script>
+<script src="js/WFSLayerUtils.js"></script>
+<script src="js/DrawController.js"></script>
+<script src="js/MapController.js"></script>
+<script> var mapController = new MapController();</script>
+
+</body>
+</html>
